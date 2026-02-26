@@ -613,6 +613,7 @@ int main(int argc, char** argv) {
   iree_uk_test_mmt4d(IREE_UK_FLAG_MMT4D_SKIP_INTERMEDIATE_ROUNDINGS |
                          IREE_UK_FLAG_MMT4D_TYPE_F16F16F16,
                      7, 16, 1, "zvfh");
+  iree_uk_test_mmt4d(IREE_UK_FLAG_MMT4D_TYPE_S8S8S32, 7, 16, 1, "v");
 
 #endif  // defined(IREE_ARCH_ARM_64)
 
