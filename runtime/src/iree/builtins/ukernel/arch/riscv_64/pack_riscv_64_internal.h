@@ -9,6 +9,6 @@
 
 #include "iree/builtins/ukernel/pack_internal.h"
 
-// Placeholder for now
+IREE_UK_PACK_TILE_FUNC_DECL(iree_uk_pack_tile_Xx1_x8_riscv_64_transpose)
 
 #endif  // IREE_BUILTINS_UKERNEL_ARCH_RISCV_64_PACK_RISCV_64_INTERNAL_H_

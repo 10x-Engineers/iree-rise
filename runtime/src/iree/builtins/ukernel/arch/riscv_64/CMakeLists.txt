@@ -47,6 +47,7 @@ iree_bitcode_library(
     "unpack_riscv_64_internal.h"
   SRCS
     "mmt4d_riscv_64_v.c"
+    "pack_riscv_64_v.c"
   COPTS
     "-march=rv64gcv"
 )
@@ -177,6 +178,7 @@ iree_cc_library(
     riscv_64_v
   SRCS
     "mmt4d_riscv_64_v.c"
+    "pack_riscv_64_v.c"
   COPTS
     "${IREE_UK_COPTS_RISCV_64_V}"
   DEPS
