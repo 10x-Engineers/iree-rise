@@ -170,6 +170,9 @@ int main(int argc, char** argv) {
                                   "avx2_fma");
   iree_uk_benchmark_register_pack(IREE_UK_FLAG_PACK_TYPE_I32I32, 16, 16,
                                   "avx512_base");
+#elif defined(IREE_ARCH_RISCV_64)
+  iree_uk_benchmark_register_pack(IREE_UK_FLAG_PACK_TYPE_I8I8, 16, 1, "v");
+  iree_uk_benchmark_register_pack(IREE_UK_FLAG_PACK_TYPE_I8I8, 7, 16, "v");
 #else   // defined(IREE_ARCH_ARM_64)
   // Architectures on which we do not have any optimized ukernel code.
   // Benchmark some arbitrary tile shape.
