@@ -242,6 +242,7 @@ int main(int argc, char** argv) {
   // avx512_vnni uses the same tile size and same pack code as avx512_base.
 #elif defined(IREE_ARCH_RISCV_64)
   iree_uk_test_pack(IREE_UK_FLAG_PACK_TYPE_I8I8, 16, 1, "v");
+  iree_uk_test_pack(IREE_UK_FLAG_PACK_TYPE_I8I8, 7, 16, "v");
 #endif  // defined(IREE_ARCH_ARM_64)
 
   return iree_uk_test_exit_status();
