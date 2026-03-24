@@ -19,6 +19,8 @@ iree_uk_pack_tile_func_t iree_uk_pack_select_tile_func_arch(
     return transpose ? iree_uk_pack_tile_Xx1_x8_riscv_64_transpose : 0;
   } else if (esize == 1 && params->out_size2 == 7 && params->out_size3 != 1) {
     return transpose ? 0 : iree_uk_pack_tile_7xX_x8_riscv_64_direct;
+  } else if (esize == 1 && params->out_size2 == 7 && params->out_size3 == 1) {
+    return transpose ? 0 : iree_uk_pack_tile_7x1_x8_riscv_64_direct;
   }
   return 0;
 }

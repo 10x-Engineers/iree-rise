@@ -64,3 +64,24 @@ void iree_uk_pack_tile_7xX_x8_riscv_64_direct(
     in_ptr += tile_size1;
   }
 }
+
+void iree_uk_pack_tile_7x1_x8_riscv_64_direct(
+    void* IREE_UK_RESTRICT out_tile_ptr,
+    const void* IREE_UK_RESTRICT in_tile_ptr, iree_uk_index_t outer_size1,
+    iree_uk_index_t out_stride1, iree_uk_index_t in_stride0,
+    iree_uk_index_t elem_size, iree_uk_index_t tile_size0,
+    iree_uk_index_t tile_size1) {
+  IREE_UK_ASSERT(elem_size == 1);
+  IREE_UK_ASSERT(tile_size0 == 7);
+  IREE_UK_ASSERT(tile_size1 == 1);
+
+  iree_uk_int8_t* IREE_UK_RESTRICT out_ptr = out_tile_ptr;
+  const iree_uk_int8_t* IREE_UK_RESTRICT in_ptr = in_tile_ptr;
+
+  for (; outer_size1 > 0; --outer_size1) {
+    vint8m1_t v = __riscv_vlse8_v_i8m1(in_ptr, in_stride0, 7);
+    __riscv_vse8_v_i8m1(out_ptr, v, 7);
+    out_ptr += out_stride1;
+    in_ptr += 1;
+  }
+}
