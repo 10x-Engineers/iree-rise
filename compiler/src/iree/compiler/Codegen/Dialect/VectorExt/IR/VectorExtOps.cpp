@@ -722,6 +722,73 @@ static Value prepareMaskForContiguousFold(PatternRewriter &rewriter,
   return mask;
 }
 
+/// Lower a transfer_gather with a single index vec (gathered on the last
+/// source dim) to vector.gather.
+struct FoldTransferGatherToVectorGather final
+    : OpRewritePattern<TransferGatherOp> {
+  using Base::Base;
+
+  LogicalResult matchAndRewrite(TransferGatherOp op,
+                                PatternRewriter &rewriter) const override {
+    // Only handle single index vec (single symbol).
+    if (op.getIndexVecs().size() != 1) {
+      return rewriter.notifyMatchFailure(op, "expected exactly one index vec");
+    }
+
+    if (op.getMask()) {
+      return rewriter.notifyMatchFailure(op, "mask is not supported");
+    }
+
+    SmallVector<AffineMap> indexingMaps = op.getIndexingMapsArray();
+    AffineMap sourceMap = indexingMaps[0];
+    AffineMap indexVecMap = indexingMaps[1];
+
+    // Check that the symbol appears only in the last source dimension.
+    unsigned numResults = sourceMap.getNumResults();
+    for (unsigned i = 0; i < numResults - 1; ++i) {
+      if (sourceMap.getResult(i).isFunctionOfSymbol(0)) {
+        return rewriter.notifyMatchFailure(
+            op, "symbol must only appear in last source dim");
+      }
+    }
+    AffineExpr lastExpr = sourceMap.getResult(numResults - 1);
+    if (!isa<AffineSymbolExpr>(lastExpr)) {
+      return rewriter.notifyMatchFailure(
+          op, "last source dim must be a pure symbol expr");
+    }
+
+    // Check that all non-symbol source dims are constants or dim exprs.
+    for (unsigned i = 0; i < numResults - 1; ++i) {
+      AffineExpr expr = sourceMap.getResult(i);
+      if (!isa<AffineConstantExpr>(expr) && !isa<AffineDimExpr>(expr)) {
+        return rewriter.notifyMatchFailure(
+            op, "non-gathered source dims must be constants or dim exprs");
+      }
+    }
+
+    Location loc = op.getLoc();
+    VectorType resultType = op.getVectorType();
+    Value indexVec = op.getIndexVecs()[0];
+
+    // Broadcast index vec to result shape using the index vec map.
+    Value bcastIndices = applyTransformMapToVector(
+        rewriter, loc, indexVec, indexVecMap, resultType.getShape());
+
+    auto maskType =
+        VectorType::get(resultType.getShape(), rewriter.getI1Type());
+    Value mask = arith::ConstantOp::create(
+        rewriter, loc, DenseElementsAttr::get(maskType, true));
+
+    Value passthru =
+        vector::BroadcastOp::create(rewriter, loc, resultType, op.getPadding());
+
+    rewriter.replaceOpWithNewOp<vector::GatherOp>(op, resultType, op.getBase(),
+                                                  op.getOffsets(), bcastIndices,
+                                                  mask, passthru);
+    return success();
+  }
+};
+
 /// Fold a contiguous transfer_gather (no index vecs) to vector.transfer_read.
 struct FoldContiguousGatherToTransferRead final
     : OpRewritePattern<TransferGatherOp> {
@@ -789,8 +856,8 @@ void TransferGatherOp::getCanonicalizationPatterns(RewritePatternSet &results,
   results
       .add<FoldSingleElementIndexVec<TransferGatherOp>,
            FoldIndexVecAddBroadcast<TransferGatherOp>,
-           FoldAllFalseMaskTransferGather, FoldContiguousGatherToTransferRead>(
-          ctx);
+           FoldAllFalseMaskTransferGather, FoldContiguousGatherToTransferRead,
+           FoldTransferGatherToVectorGather>(ctx);
 }
 
 //===----------------------------------------------------------------------===//
